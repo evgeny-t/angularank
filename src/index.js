@@ -6,7 +6,23 @@ import './index.css';
 
 import GitHub from 'github-api';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+import { Provider } from 'react-redux';
+import { createLogger } from 'redux-logger';
+import thunkMiddleware from 'redux-thunk';
+import { createStore, applyMiddleware } from 'redux';
+
+const loggerMiddleware = createLogger();
+
+const store = createStore(
+  state => state,
+  applyMiddleware(thunkMiddleware, loggerMiddleware)
+);
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>, 
+  document.getElementById('root'));
 // registerServiceWorker();
 
 
