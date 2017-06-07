@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import logo from './logo.svg';
 import './App.css';
 
@@ -13,9 +14,21 @@ class App extends Component {
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
+        {this.props.users.map(user => 
+          <div style={{
+            height: 100,
+            width: 100,
+            display: 'inline-block',
+            border: '1px solid #ee1',
+          }}>
+            <img width={50} height={50} src={user.avatar_url} />
+          </div>)}
       </div>
     );
   }
 }
 
-export default App;
+export default connect(
+  state => ({ users: state.users }),
+  dispatch => ({}),
+)(App);
