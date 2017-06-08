@@ -14,7 +14,7 @@ class App extends Component {
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
-        {this.props.users.map(user => 
+        {this.props.users && this.props.users.map(user => 
           <div style={{
             height: 100,
             width: 100,

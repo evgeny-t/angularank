@@ -13,39 +13,30 @@ import { createStore, applyMiddleware } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import _ from 'lodash';
 
+import { combine, createDux } from './dux'
+
 import state from './state.cached.js';
-console.log('state', state);
 
 const loggerMiddleware = createLogger();
 
-const combine = (...reducers) => (state, action) => {
-  for (let i = 0; i < reducers.length; ++i) {
-    let newState = reducers[i](state, action);
-    if (newState !== undefined && newState !== state) {
-      return newState;
-    }
-  }
-  return state;
-}
-
-const createDux = options => {
-  return { 
-    ..._.reduce(options, (acc, val, key) => 
-      _.set(acc, key, (...args) => ({ type: _.snakeCase(key).toUpperCase(), args })), {}),
-    reducer: combine(
-      ..._.map(options, (val, key) => 
-        (state, { type, args }) => 
-          type === _.snakeCase(key).toUpperCase() ? val(state, ...args) : state)),
-  };
-};
-
-const { setUsers, reducer: usersReducer } = createDux({
+const { setUsers, addUsers, reducer: usersReducer } = createDux({
   setUsers: (state, users) => ({ ...state, users }),
-})
+  addUsers: (state, users) => ({ 
+    ...state, 
+    users: [].concat(state.users || [], users)
+  }),
+});
+
+const { setRepos, reducer: reposReducer } = createDux({
+  setRepos: (state, repos) => ({ 
+    ...state, 
+    repos: repos.reduce((acc, curr) => _.set(acc, curr.id, curr), {}),
+  }),
+});
 
 const store = createStore(
-  usersReducer, 
-  state,
+  combine(usersReducer, reposReducer), 
+  {/*state*/},
   composeWithDevTools(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
 
@@ -56,48 +47,49 @@ ReactDOM.render(
   document.getElementById('root'));
 // registerServiceWorker();
 
+const batchPromises = (promiseCreators, chunkSize) =>
+  Promise.resolve(_.chunk(promiseCreators, chunkSize))
+    .then(chunks => chunks.reduce((acc, curr) => 
+      acc.then(previous => Promise.all([
+        ...previous, ...curr.map(request => request())
+      ])), Promise.resolve([])));
 
-let g = new GitHub({
+let github = new GitHub({
   username: 'evgeny-t',
   token: '5562e457193223961f1296e7effd0a7ba0c6a384',
 })
-let a = g.getOrganization('angular');
+let org = github.getOrganization('angular');
 
-g.getRateLimit().getRateLimit()
+github.getRateLimit().getRateLimit()
   .then(rl => {
     console.log(rl)
   });
 
-(function() {
-a.getRepos().then(repos => {
-  console.log(repos)
+const fetchRepos = () => 
+  (dispatch, getState) => 
+    Promise.resolve()
+      .then(() => org.getRepos())
+      .then(repos => dispatch(setRepos(repos.data)));
 
-  const users = 
-    _.chain(repos.data.slice(0, 1))
-      .map(repoData => 
-        () => g.getRepo(...repoData.full_name.split('/')).getContributorStats())
-      .thru(requests => _.chunk(requests, 1))
-      .reduce((acc, curr) => 
-        acc.then(previous => Promise.all([...previous, ...curr.map(request => request())])), Promise.resolve([]))
-      .value()
-      .then(contribStatsResponse => 
-        _.chain(contribStatsResponse)
-          .map('data')
-          .flatten()
-          .map('author')
-          .value())
-      .then(users => store.dispatch(setUsers(users)));
-});
-  // let r = repos.data[2];
-  // console.log(r.name, r)
-  // r = g.getRepo(...r.full_name.split('/'))
-  // r.getContributors()
-  //   .then(ctrbs => {
-  //     console.log('ctrbs:', ctrbs)
-  //   })
-  // r.getContributorStats()
-  //   .then(stats => {
-  //   });
-  //     console.log('stats:', stats)
-})();
+const fetchContributorsStats = (repos) => 
+  (dispatch, getState) => 
+    Promise.resolve()
+      .then(() => _.chain(repos.slice(0, 2))
+        .map(repoData => () => {
+          const repo = github.getRepo(...repoData.full_name.split('/'));
+          return repo.getContributorStats()
+            .then(stat => {
+              console.log('stat', stat);
+              dispatch(addUsers(_.map(stat.data, 'author')));
+            })
+        })
+        .thru(fetchers => batchPromises(fetchers, 1))
+        .value());
+
+store.dispatch(fetchRepos())
+  .then(() => {
+    console.log('fetchRepos:', store.getState());
+    store.dispatch(fetchContributorsStats(_.map(store.getState().repos)));
+  });
+
 
