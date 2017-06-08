@@ -13,29 +13,23 @@ import { createStore, applyMiddleware } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import _ from 'lodash';
 
-import { combine, createDux } from './dux'
+import { combine, createDux } from './createDux';
 
 import state from './state.cached.js';
+import all from './dux';
+
+const {
+  updateRepoStat,
+  updateUserStat,
+  setUsers,
+  addUsers,
+  setRepos,
+} = all;
 
 const loggerMiddleware = createLogger();
 
-const { setUsers, addUsers, reducer: usersReducer } = createDux({
-  setUsers: (state, users) => ({ ...state, users }),
-  addUsers: (state, users) => ({ 
-    ...state, 
-    users: [].concat(state.users || [], users)
-  }),
-});
-
-const { setRepos, reducer: reposReducer } = createDux({
-  setRepos: (state, repos) => ({ 
-    ...state, 
-    repos: repos.reduce((acc, curr) => _.set(acc, curr.id, curr), {}),
-  }),
-});
-
 const store = createStore(
-  combine(usersReducer, reposReducer), 
+  all.reducer, 
   {/*state*/},
   composeWithDevTools(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
@@ -80,6 +74,8 @@ const fetchContributorsStats = (repos) =>
           return repo.getContributorStats()
             .then(stat => {
               console.log('stat', stat);
+              dispatch(updateRepoStat(repoData, stat.data));
+              dispatch(updateUserStat(repoData, stat.data));
               dispatch(addUsers(_.map(stat.data, 'author')));
             })
         })
