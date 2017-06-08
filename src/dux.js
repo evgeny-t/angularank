@@ -1,22 +1,57 @@
 import _ from 'lodash';
+import { combine, createDux } from './createDux';
 
-export var combine = (...reducers) => (state, action) => {
-  for (let i = 0; i < reducers.length; ++i) {
-    let newState = reducers[i](state, action);
-    if (newState !== undefined && newState !== state) {
-      return newState;
-    }
-  }
-  return state;
-}
+const { reducer: statReducer, ...statActions } = createDux({
+  updateRepoStat: (state, repo, data) => ({
+    ...state,
+    repoToStats: {
+      ...(state.repoToStats || {}),
+      [repo.id]: data.reduce(
+        (acc, curr) => _.set(acc, curr.author.id, {
+          total: curr.total,
+          weeks: curr.weeks,
+        }), {}),
+    },
+  }),
 
-export var createDux = options => {
-  return { 
-    ..._.reduce(options, (acc, val, key) => 
-      _.set(acc, key, (...args) => ({ type: _.snakeCase(key).toUpperCase(), args })), {}),
-    reducer: combine(
-      ..._.map(options, (val, key) => 
-        (state, { type, args }) => 
-          type === _.snakeCase(key).toUpperCase() ? val(state, ...args) : state)),
-  };
+  updateUserStat: (state, repo, data) => 
+    data.reduce((state, data) => ({
+      ...state,
+      userToStats: {
+        ...(state.userToStats || {}),
+        [data.author.id]: {
+          ..._.get(state.userToStats, data.author.id, {}),
+          [repo.id]: { 
+            total: data.total,
+            weeks: data.weeks,
+          }
+        }, 
+      }
+    }), state),
+
+});
+
+const { reducer: usersReducer, ...userActions } = createDux({
+  setUsers: (state, users) => ({ ...state, users }),
+  addUsers: (state, users) => ({ 
+    ...state, 
+    users: [].concat(state.users || [], users)
+  }),
+});
+
+const { reducer: reposReducer, ...reposActions } = createDux({
+  setRepos: (state, repos) => ({ 
+    ...state, 
+    repos: repos.reduce((acc, curr) => _.set(acc, curr.id, curr), {}),
+  }),
+});
+
+export default {
+  ...statActions,
+  ...userActions,
+  ...reposActions,
+  reducer: combine(
+    statReducer, 
+    usersReducer, 
+    reposReducer),
 };
