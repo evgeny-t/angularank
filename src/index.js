@@ -15,8 +15,8 @@ import _ from 'lodash';
 
 import { combine, createDux } from './createDux';
 
-import state from './state.cached.js';
 import all from './dux';
+import state from './state.json';
 
 const {
   updateRepoStat,
@@ -30,9 +30,11 @@ const loggerMiddleware = createLogger();
 
 const store = createStore(
   all.reducer, 
-  {/*state*/},
-  composeWithDevTools(applyMiddleware(thunkMiddleware, loggerMiddleware))
+  state,
+  /*composeWithDevTools*/(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
+
+window.store = store;
 
 ReactDOM.render(
   <Provider store={store}>
@@ -48,16 +50,27 @@ const batchPromises = (promiseCreators, chunkSize) =>
         ...previous, ...curr.map(request => request())
       ])), Promise.resolve([])));
 
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const backoff = (promiseCreator, delay = 1000) => 
+  promiseCreator()
+    .then(resp => {
+      console.log('resp: ', resp)
+      if (resp.status === 202) {
+        console.log('backoff:', delay, resp);
+        return wait(delay)
+          .then(() => backoff(promiseCreator, delay * 2));
+      } else {
+        console.log(`backoff: ${resp.status} after ${delay}`);
+        return resp;
+      }
+    });
+
 let github = new GitHub({
   username: 'evgeny-t',
   token: '5562e457193223961f1296e7effd0a7ba0c6a384',
 })
 let org = github.getOrganization('angular');
-
-github.getRateLimit().getRateLimit()
-  .then(rl => {
-    console.log(rl)
-  });
 
 const fetchRepos = () => 
   (dispatch, getState) => 
@@ -68,24 +81,26 @@ const fetchRepos = () =>
 const fetchContributorsStats = (repos) => 
   (dispatch, getState) => 
     Promise.resolve()
-      .then(() => _.chain(repos.slice(0, 2))
+      .then(() => _.chain(repos/*.slice(0, 5)*/)
         .map(repoData => () => {
           const repo = github.getRepo(...repoData.full_name.split('/'));
-          return repo.getContributorStats()
+          return backoff(() => repo.getContributorStats())
             .then(stat => {
-              console.log('stat', stat);
-              dispatch(updateRepoStat(repoData, stat.data));
-              dispatch(updateUserStat(repoData, stat.data));
-              dispatch(addUsers(_.map(stat.data, 'author')));
-            })
+              if (stat.status !== 204) {
+                console.log('stat', repoData.full_name, repoData.id, stat);
+                dispatch(updateRepoStat(repoData, stat.data));
+                dispatch(updateUserStat(repoData, stat.data));
+                dispatch(addUsers(_.map(stat.data, 'author')));
+              }
+            });
         })
-        .thru(fetchers => batchPromises(fetchers, 1))
+        .thru(fetchers => batchPromises(fetchers, 5))
         .value());
 
-store.dispatch(fetchRepos())
-  .then(() => {
-    console.log('fetchRepos:', store.getState());
-    store.dispatch(fetchContributorsStats(_.map(store.getState().repos)));
-  });
+// store.dispatch(fetchRepos())
+//   .then(() => {
+//     console.log('fetchRepos:', store.getState());
+//     store.dispatch(fetchContributorsStats(_.map(store.getState().repos)));
+//   });
 
 

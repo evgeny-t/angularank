@@ -9,7 +9,7 @@ const { reducer: statReducer, ...statActions } = createDux({
       [repo.id]: data.reduce(
         (acc, curr) => _.set(acc, curr.author.id, {
           total: curr.total,
-          weeks: curr.weeks,
+          weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
         }), {}),
     },
   }),
@@ -23,7 +23,7 @@ const { reducer: statReducer, ...statActions } = createDux({
           ..._.get(state.userToStats, data.author.id, {}),
           [repo.id]: { 
             total: data.total,
-            weeks: data.weeks,
+            weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
           }
         }, 
       }
@@ -33,9 +33,10 @@ const { reducer: statReducer, ...statActions } = createDux({
 
 const { reducer: usersReducer, ...userActions } = createDux({
   setUsers: (state, users) => ({ ...state, users }),
-  addUsers: (state, users) => ({ 
+  addUsers: (state, users = []) => ({ 
     ...state, 
-    users: [].concat(state.users || [], users)
+    users: users.reduce((acc, user) => 
+      _.set(acc, user.id, user), { ...state.users }),
   }),
 });
 

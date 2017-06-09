@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import logo from './logo.svg';
@@ -29,6 +30,6 @@ class App extends Component {
 }
 
 export default connect(
-  state => ({ users: state.users }),
+  state => ({ users: _.map(state.users) }),
   dispatch => ({}),
 )(App);
