@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
@@ -16,7 +18,8 @@ import _ from 'lodash';
 import { combine, createDux } from './createDux';
 
 import all from './dux';
-import state from './state.json';
+let state = {};
+// import state from './state.json';
 
 const {
   updateRepoStat,
@@ -38,7 +41,9 @@ window.store = store;
 
 ReactDOM.render(
   <Provider store={store}>
-    <App />
+    <MuiThemeProvider>
+      <App />
+    </MuiThemeProvider>
   </Provider>, 
   document.getElementById('root'));
 // registerServiceWorker();
@@ -86,6 +91,7 @@ const fetchContributorsStats = (repos) =>
           const repo = github.getRepo(...repoData.full_name.split('/'));
           return backoff(() => repo.getContributorStats())
             .then(stat => {
+              console.log('stat', stat)
               if (stat.status !== 204) {
                 console.log('stat', repoData.full_name, repoData.id, stat);
                 dispatch(updateRepoStat(repoData, stat.data));
@@ -97,10 +103,12 @@ const fetchContributorsStats = (repos) =>
         .thru(fetchers => batchPromises(fetchers, 5))
         .value());
 
-// store.dispatch(fetchRepos())
-//   .then(() => {
-//     console.log('fetchRepos:', store.getState());
-//     store.dispatch(fetchContributorsStats(_.map(store.getState().repos)));
-//   });
+store.dispatch(fetchRepos())
+  .then(() => {
+    console.log('fetchRepos:', store.getState());
+    store.dispatch(fetchContributorsStats(
+      [store.getState().repos[460078]]));
+      // _.map(store.getState().repos)));
+  });
 
 
