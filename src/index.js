@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
@@ -8,18 +9,20 @@ import './index.css';
 
 import GitHub from 'github-api';
 
+import { BrowserRouter } from 'react-router-dom';
+
 import { Provider } from 'react-redux';
 import { createLogger } from 'redux-logger';
 import thunkMiddleware from 'redux-thunk';
 import { createStore, applyMiddleware } from 'redux';
 import { composeWithDevTools } from 'redux-devtools-extension';
-import _ from 'lodash';
+
 
 import { combine, createDux } from './createDux';
 
 import all from './dux';
-let state = {};
-// import state from './state.json';
+// let state = {};
+import state from './state.json';
 
 const {
   updateRepoStat,
@@ -42,7 +45,9 @@ window.store = store;
 ReactDOM.render(
   <Provider store={store}>
     <MuiThemeProvider>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </MuiThemeProvider>
   </Provider>, 
   document.getElementById('root'));
@@ -103,12 +108,12 @@ const fetchContributorsStats = (repos) =>
         .thru(fetchers => batchPromises(fetchers, 5))
         .value());
 
-store.dispatch(fetchRepos())
-  .then(() => {
-    console.log('fetchRepos:', store.getState());
-    store.dispatch(fetchContributorsStats(
-      [store.getState().repos[460078]]));
-      // _.map(store.getState().repos)));
-  });
+// store.dispatch(fetchRepos())
+//   .then(() => {
+//     console.log('fetchRepos:', store.getState());
+//     store.dispatch(fetchContributorsStats(
+//       // [store.getState().repos[460078]]));
+//       _.map(store.getState().repos)));
+//   });
 
 
