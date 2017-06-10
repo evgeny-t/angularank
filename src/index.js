@@ -121,4 +121,37 @@ const fetchContributorsStats = (repos) =>
 //       _.map(store.getState().repos)));
 //   });
 
+function listFollowers(options, cb) {
+  if (typeof options === 'function') {
+      cb = options;
+      options = {};
+  }
+  options = this._getOptionsWithDefaults(options);
+  return this._requestAllPages(this.__getScopedUrl('followers'), options, cb);
+}
 
+setTimeout(() => {
+  _.chain(store.getState().users)
+    .map()
+    .slice(0, 1)
+    .map(u => {
+      let user = github.getUser(u.login);
+      console.log(user)
+      user.listRepos({})
+        .then(repos => {
+          console.log(u.login, repos);
+        })
+        .then(() => user.listGists())
+        .then(gists => {
+          console.log(u.login, gists);
+        })
+        .then(listFollowers.bind(user, {}))
+        .then(result => {
+          console.log('result', result);
+        })
+    })
+    .value();
+}, 1000);
+
+// TODO(ET): user to followers
+// TODO(ET): user to public repos&gists
