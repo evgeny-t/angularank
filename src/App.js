@@ -6,6 +6,15 @@ import AppBar from 'material-ui/AppBar';
 import Avatar from 'material-ui/Avatar';
 import Paper from 'material-ui/Paper';
 
+import {
+  Toolbar, ToolbarGroup, 
+  ToolbarSeparator, ToolbarTitle
+} from 'material-ui/Toolbar';
+import RaisedButton from 'material-ui/RaisedButton';
+import Popover from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
+import MenuItem from 'material-ui/MenuItem';
+
 import './App.css';
 
 const UserDetails = ({ user }) => (
@@ -48,6 +57,61 @@ const User = ({ user }) => (
   </div>
 );
 
+class RankFilter extends Component {
+  state = {
+    open: false,
+    filters: [
+      'By Contribution',
+      'By Followers',
+      'By Public repos & gists',
+    ],
+    current: 0,
+  }
+
+  handleClick = event => {
+    event.preventDefault();
+    this.setState({
+      open: true,
+      anchorEl: event.currentTarget,
+    });
+  }
+
+  handleRequestClose = event => {
+    this.setState({ open: false });
+  }
+
+  render() {
+    return <div>
+      <RaisedButton 
+        onTouchTap={this.handleClick}
+        label={this.state.filters[this.state.current]}
+      />
+      <Popover
+        open={this.state.open}
+        onRequestClose={this.handleRequestClose}
+        anchorEl={this.state.anchorEl}
+        anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+        targetOrigin={{ horizontal: 'left', vertical: 'top' }}
+      >
+        <Menu>
+          {
+            this.state.filters.map((filter, index) => 
+              <MenuItem 
+                key={filter}
+                primaryText={filter} 
+                onTouchTap={() => 
+                  this.setState({ 
+                    current: index,
+                    open: false,
+                  })}
+              />)
+          }
+        </Menu>
+      </Popover>
+    </div>;
+  }
+}
+
 const Users = connect(
   state => ({ 
     users: _.chain(state.users)
@@ -66,6 +130,11 @@ const Users = connect(
   dispatch => ({}),
 )(({ users }) => {
   return <div>
+    <Toolbar>
+      <ToolbarGroup>
+        <RankFilter />
+      </ToolbarGroup>
+    </Toolbar>
     {users ? users.map(user => <User key={user.id} user={user} />) : null}
   </div>
 });
@@ -86,3 +155,4 @@ export default class App extends Component {
     );
   }
 }
+
