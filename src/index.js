@@ -35,6 +35,7 @@ const {
   setUsers,
   addUsers,
   setRepos,
+  setUserMetrics,
 } = all;
 
 const loggerMiddleware = createLogger();
@@ -69,17 +70,8 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const backoff = (promiseCreator, delay = 1000) => 
   promiseCreator()
-    .then(resp => {
-      console.log('resp: ', resp)
-      if (resp.status === 202) {
-        console.log('backoff:', delay, resp);
-        return wait(delay)
-          .then(() => backoff(promiseCreator, delay * 2));
-      } else {
-        console.log(`backoff: ${resp.status} after ${delay}`);
-        return resp;
-      }
-    });
+    .catch(() => wait(delay)
+      .then(() => backoff(promiseCreator, delay * 2)));
 
 let github = new GitHub({
   username: 'evgeny-t',
@@ -99,7 +91,9 @@ const fetchContributorsStats = (repos) =>
       .then(() => _.chain(repos/*.slice(0, 5)*/)
         .map(repoData => () => {
           const repo = github.getRepo(...repoData.full_name.split('/'));
-          return backoff(() => repo.getContributorStats())
+          return backoff(() => 
+            repo.getContributorStats()
+              .then(resp => (resp.status === 202) ? Promise.reject() : resp))
             .then(stat => {
               console.log('stat', stat)
               if (stat.status !== 204) {
@@ -130,28 +124,27 @@ function listFollowers(options, cb) {
   return this._requestAllPages(this.__getScopedUrl('followers'), options, cb);
 }
 
-setTimeout(() => {
-  _.chain(store.getState().users)
-    .map()
-    .slice(0, 1)
-    .map(u => {
-      let user = github.getUser(u.login);
-      console.log(user)
-      user.listRepos({})
-        .then(repos => {
-          console.log(u.login, repos);
-        })
-        .then(() => user.listGists())
-        .then(gists => {
-          console.log(u.login, gists);
-        })
-        .then(listFollowers.bind(user, {}))
-        .then(result => {
-          console.log('result', result);
-        })
-    })
-    .value();
-}, 1000);
+// setTimeout(() => {
+//   _.chain(store.getState().users)
+//     .map()
+//     // .slice(0, 1)
+//     .map(u => () => {
+//       let user = github.getUser(u.login);
+//       console.log(user)
 
-// TODO(ET): user to followers
-// TODO(ET): user to public repos&gists
+//       const requests = [
+//         backoff(() => user.listRepos({})), 
+//         backoff(() => user.listGists()),
+//         backoff(() => listFollowers.call(user, {})),
+//       ];
+//       return Promise.all(requests)
+//         .then(([repos, gists, followers]) => {
+//           const total = repos.data.length + gists.data.length;
+//           store.dispatch(setUserMetrics(u, 'userToRepos', total));
+//           store.dispatch(setUserMetrics(
+//             u, 'userToFollowers', followers.data.length));
+//         });
+//     })
+//     .thru(fetchers => batchPromises(fetchers, 1))
+//     .value();
+// }, 1000);
