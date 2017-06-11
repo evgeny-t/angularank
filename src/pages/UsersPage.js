@@ -52,6 +52,35 @@ export const UserDetailsContainer = connect(
   </div>
 ));
 
+const styles = {
+  user: {
+    metricsContainer: {
+      position: 'absolute',
+      textAlign: 'left',
+      left: `${75 + 4 + 4}px`,
+      margin: 4,
+    },
+    metrics: {
+      // border: '1px solid #2ee',
+      display: 'block',
+      marginTop: 2,
+    },
+    icon: {
+      width: 15,
+      height: 15,
+      verticalAlign: 'middle',
+      // border: '1px solid #ee2',
+      display: 'inline',
+    },
+    value: {
+      verticalAlign: 'middle',
+      // border: '1px solid #e2e',
+      fontSize: '0.7rem',
+      margin: 2,
+    }
+  }
+}
+
 const User = ({ user, style }) => (
   <Paper 
     zDepth={1}
@@ -76,64 +105,33 @@ const User = ({ user, style }) => (
         }}
       />
 
-      <div style={{
-        width: '50%',
-        position: 'absolute',
-        left: '50%',
-      }}>
+      <div style={styles.user.metricsContainer}>
 
-        <div style={{
-          border: '1px solid #2ee',
-          display: 'inline-block',
-        }}>
+        <div style={styles.user.metrics}>
           <CodeIcon 
-            style={{
-              verticalAlign: 'middle',
-              border: '1px solid #ee2',
-              display: 'inline',
-            }}
+            style={styles.user.icon}
           />
-          <span style={{
-            verticalAlign: 'middle',
-            border: '1px solid #e2e',
-            fontSize: '0.8rem',
-          }}>{user.stat.total}</span>
+          <span style={styles.user.value}>
+            {user.stat.total}
+          </span>
         </div>
 
-        <div style={{
-          border: '1px solid #2ee',
-          display: 'inline-block',
-        }}>
+        <div style={styles.user.metrics}>
           <PeopleIcon 
-            style={{
-              verticalAlign: 'middle',
-              border: '1px solid #ee2',
-              display: 'inline',
-            }}
+            style={styles.user.icon}
           />
-          <span style={{
-            verticalAlign: 'middle',
-            border: '1px solid #e2e',
-            fontSize: '0.8rem',
-          }}>{user.stat.total}</span>
+          <span style={styles.user.value}>
+            {user.stat.followers}
+          </span>
         </div>
 
-        <div style={{
-          border: '1px solid #2ee',
-          display: 'inline-block',
-        }}>
+        <div style={styles.user.metrics}>
           <RepoIcon
-            style={{
-              verticalAlign: 'middle',
-              border: '1px solid #ee2',
-              display: 'inline',
-            }}
+            style={styles.user.icon}
           />
-          <span style={{
-            verticalAlign: 'middle',
-            border: '1px solid #e2e',
-            fontSize: '0.8rem',
-          }}>{user.stat.total}</span>
+          <span style={styles.user.value}>
+            {user.stat.repos}
+          </span>
         </div>
 
       </div>
@@ -234,16 +232,22 @@ export const UsersPage = connect(
         ...user,
         stat: _.chain(state.userToStats[user.id])
           .reduce((acc, repoStats, repoId) => ({ 
+            ...acc,
             total: acc.total + repoStats.total 
-          }), { total: 0 })
+          }), { 
+            total: 0,
+            repos: state.userToRepos[user.id],
+            followers: state.userToFollowers[user.id],
+          })
           .value(),
+        
       }))
       .sortBy(user => -user.stat.total)
       .value()
       // .slice(0, 30),
   }),
   dispatch => ({}),
-)(({ users }) => {
+)(props => {
   return (
     <div>
       <Toolbar>
@@ -252,10 +256,10 @@ export const UsersPage = connect(
         </ToolbarGroup>
       </Toolbar>
       <UsersPageContent 
-        users={users} 
         style={{
           margin: '4px auto',
         }}
+        {...props}
       />
     </div>);
 });
