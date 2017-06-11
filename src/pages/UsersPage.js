@@ -208,13 +208,13 @@ const UsersPageContent = props =>
           <User user={props.users[index]} 
             key={key} style={style} />}
         cellSizeAndPositionGetter={({ index }) => ({
-          height: 150,
-          width: 150,
-          x: (index % 5) * 150,
-          y: Math.trunc(index / 5) * 150,
+          height: props.rowHeight,
+          width: props.columnWidth,
+          x: (index % props.columns) * props.columnWidth,
+          y: Math.trunc(index / props.columns) * props.rowHeight,
         })}
         height={height}
-        width={150*5}
+        width={props.columnWidth * props.columns}
 
         isScrolling={isScrolling}
         scrollTop={scrollTop}
@@ -223,6 +223,12 @@ const UsersPageContent = props =>
       />
     )}
   </WindowScroller>;
+
+UsersPageContent.defaultProps = {
+  columns: 5,
+  columnWidth: 150,
+  rowHeight: 150,
+};
 
 
 export const UsersPage = connect(
