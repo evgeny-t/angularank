@@ -1,0 +1,53 @@
+.Repo > div {
+  padding: 10px;
+}
+
+.Repo {
+  display: inline-block;
+  margin: 10px;
+  min-width: 250px;
+  max-width: 250px;
+}
+
+.Repo__Info span {
+  margin-right: 20px;
+  font-size: 0.8rem;
+}
+
+.Repo__Language {
+  padding-left: 20px;
+  position: relative;
+}
+
+.Repo__Icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: center;
+}
+
+.Repo__Language:before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #f1e05a;
+}
+
+.Repo__Language--TypeScript:before {
+  background: #2b7489;
+}
+
+.Repo__Language--Dart:before {
+  background: #00B4AB;
+}
+
+.Repo__Language--HTML:before {
+  background: #e34c26;
+}
+
+.Repo__Language--CSS:before {
+  background: #563d7c;
+}
