@@ -192,11 +192,13 @@ const UsersPageContent = props =>
         cellSizeAndPositionGetter={({ index }) => ({
           height: props.rowHeight,
           width: props.columnWidth,
-          x: (index % props.columns) * props.columnWidth,
-          y: Math.trunc(index / props.columns) * props.rowHeight,
+          x: (index % props.columns) * (
+            props.columnWidth + props.padding),
+          y: Math.trunc(index / props.columns) * 
+          (props.rowHeight + props.padding),
         })}
         height={height}
-        width={props.columnWidth * props.columns}
+        width={(props.columnWidth + props.padding) * props.columns}
 
         isScrolling={isScrolling}
         scrollTop={scrollTop}
@@ -210,6 +212,7 @@ UsersPageContent.defaultProps = {
   columns: 5,
   columnWidth: 150,
   rowHeight: 150,
+  padding: 10,
 };
 
 
