@@ -34,24 +34,6 @@ const RepoIcon = props => (
   </SvgIcon>
 );
 
-const UserDetails = ({ user }) => (
-  <Paper zDepth={1}>
-    <Avatar
-      src={user.avatar_url}
-      size={300}
-    />
-    <div>{user.login}</div>
-  </Paper>
-);
-
-export const UserDetailsContainer = connect(
-  state => state,
-)(({ match, users }) => (
-  <div>
-    <UserDetails user={users[match.params.userid]} />
-  </div>
-));
-
 const styles = {
   user: {
     metricsContainer: {

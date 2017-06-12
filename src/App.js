@@ -7,6 +7,7 @@ import AppBar from 'material-ui/AppBar';
 import './App.css';
 
 import { UsersPage, UserDetailsContainer } from './pages/UsersPage';
+import { UserDetailsPage } from './pages/UserDetailsPage'
 
 export default class App extends Component {
   render() {
@@ -18,7 +19,7 @@ export default class App extends Component {
           }} to='/'>Angularank</Link>}
         />
         <Route exact path='/' component={UsersPage} />
-        <Route path={`/users/:userid`} component={UserDetailsContainer} />
+        <Route path={`/users/:userid`} component={UserDetailsPage} />
       </div>
     );
   }
