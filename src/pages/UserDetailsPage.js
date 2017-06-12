@@ -2,6 +2,8 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import { Link } from 'react-router-dom';
+
 import Avatar from 'material-ui/Avatar';
 import Paper from 'material-ui/Paper';
 import SvgIcon from 'material-ui/SvgIcon';
@@ -41,7 +43,8 @@ const iconStyle = {
   verticalAlign: 'middle',
 };
 
-const Repo = ({ name, language, forks_count, stargazers_count }) => (
+const Repo = ({ id, name, language, 
+  forks_count, stargazers_count }) => (
   <Paper 
     className='Repo'
     zDepth={1}
@@ -49,7 +52,9 @@ const Repo = ({ name, language, forks_count, stargazers_count }) => (
       
     }}
   >
-    <div>{name}</div>
+    <div>
+      <Link to={`/repos/${id}`}>{name}</Link>
+    </div>
     <div className='Repo__Info'>
       <span className={`Repo__Language Repo__Language--${language}`}>
         {language}

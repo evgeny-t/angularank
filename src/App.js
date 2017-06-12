@@ -8,6 +8,7 @@ import './App.css';
 
 import { UsersPage, UserDetailsContainer } from './pages/UsersPage';
 import { UserDetailsPage } from './pages/UserDetailsPage'
+import { RepoDetailsPage } from './pages/RepoDetailsPage';
 
 export default class App extends Component {
   render() {
@@ -18,8 +19,10 @@ export default class App extends Component {
             color: 'white',
           }} to='/'>Angularank</Link>}
         />
+{/*TODO(ET): layout componenet*/}
         <Route exact path='/' component={UsersPage} />
         <Route path={`/users/:userid`} component={UserDetailsPage} />
+        <Route path={`/repos/:repoid`} component={RepoDetailsPage} />
       </div>
     );
   }
