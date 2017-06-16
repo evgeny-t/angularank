@@ -6,7 +6,7 @@ const GitHub = require('github-api');
 const throttleDelay = 60 * 1000;
 
 const github = new GitHub({
-   token: '7170c899ef5fe25138886a75be9d2b4a9a590faa',
+   token: '5f82fcd9c4164494c8453e5a13a98e25e3ee5eaa',
 });
 
 
@@ -21,8 +21,11 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const backoff = (promiseCreator, delay = 1000) => 
   promiseCreator()
-    .catch(() => wait(delay)
-      .then(() => backoff(promiseCreator, delay * 2)));
+    .catch((err) => {
+      console.log('backoff', err);
+      return wait(delay)
+        .then(() => backoff(promiseCreator, delay * 2));
+    });
 
 let org = github.getOrganization('angular');
 
@@ -62,7 +65,7 @@ function listFollowers(options, cb) {
 
 const getUserMetrics = (() => {
   const github = new GitHub({
-    token: 'e3d0ebeaa4379859a5d3fbc7d912ba8fcca34986',
+    token: '6bd75ae2ebac67d37f383c67e15273580b5c1301',
   });
 
   return u => {
@@ -139,8 +142,101 @@ const lock = id =>
 const unlock = id =>
   ds.save({ key: ds.key(['lock', id]), data: { lock: false }});
 
+const toMessage = event =>
+  JSON.parse(Buffer.from(event.data.data, 'base64').toString());
+
+const publish = (topic, message) => ps.topic(topic).publish(message);
+
+const userKey = id => ds.key(['User', id]);
+
+const updateUserTopic = 'updateUser';
+
+exports.updateUser = event => {
+  const message = toMessage(event);
+  const { user, repoId, contribution, } = message;
+  
+  console.log(`updateUser: process ${user.login}`);
+
+  const key = userKey(user.id);
+
+  return Promise.resolve()
+    .then(() => {
+      console.log(`updateUser: get metrics for ${user.login}`);
+      return Promise.all([
+        getUserMetrics(data.author), 
+        delay(60 * 1000)
+      ]); 
+    })
+    .then(([metrics]) => {
+      console.log(`updateUser: trying to save ${user.login}`);
+      return backoff(() => 
+        tran(key, user => Object.assign(user, {
+          [repoId]: contribution,
+        }, metrics)));
+    });
+
+  // batchPromises(_.map(stat.data, data => 
+  //       () => getUserMetrics(data.author)
+  //         .then(metrics => Object.assign({}, data.author, metrics))
+  //         .then(author => ds.save({
+  //           key: ds.key(['User', author.id]),
+  //           data: author, 
+  //         }))
+  //       ), 10)
+};
+
+exports.processRepo = event => {
+  const message = toMessage(event);
+  const { repoData } = message;
+
+  console.log(`processRepo: process ${repoData.full_name}`);
+  const repo = github.getRepo(...repoData.full_name.split('/'));
+
+  return backoff(() => 
+    repo.getContributorStats()
+      .then(resp => (resp.status === 200) ? resp : Promise.reject(resp)))
+    .then(stat => {
+      console.log(`processRepo: stage(1): get stats for ${repoData.full_name} (${stat})`);
+      let promiseRepoStat = ds.save({
+        key: ds.key(['Repo', repoData.id]),
+        data: stat.data.reduce(
+          (acc, curr) => _.set(acc, `users.${curr.author.id}`, {
+            total: curr.total,
+            weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
+          }), repoData),
+      });
+      return Promise.all([promiseRepoStat, stat]);
+    })
+    .then(([temp, stat]) => {
+      console.log(`processRepo: stage(2): create ${stat.data.length} users`);
+
+      const userCreators = batchPromises(_.map(stat.data, data => 
+        () => ds.save({
+          key: userKey(data.author.id),
+          data: data.author, 
+        })), 10);
+
+      return Promise.all([userCreators, stat]);
+    })
+    .then((result) => delay(30 * 1000).then(() => result))
+    .then(([temp, stat]) => {
+      console.log(`processRepo: stage(3): queue stats for ${repoData.full_name} (${stat})`);
+      const promiseCreators = stat.data.map(data => ({
+        user: data.author,
+        repoId: repoData.id,
+        contribution: {
+          total: data.total,
+            weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
+        }
+      }))
+      .map(message => () => publish(updateUserTopic, message));
+      console.log(`processRepo: stage(3): publish ${promiseCreators.length} messages`);
+      return batchPromises(promiseCreators, 10);
+    });
+};
+
 exports.prepareStats = event => {
-  const message = JSON.parse(Buffer.from(event.data.data, 'base64').toString());
+  const message = toMessage(event);
   
   console.log(`prepareStats`, message);
 
@@ -151,7 +247,7 @@ exports.prepareStats = event => {
 
     return backoff(() => 
       repo.getContributorStats()
-        .then(resp => (resp.status === 202) ? Promise.reject() : resp))
+        .then(resp => (resp.status === 202) ? Promise.reject(resp) : resp))
       .then(stat => {
         console.log('prepareStats: stat:', stat)
         if (stat.status !== 204) {
@@ -193,7 +289,7 @@ exports.prepareStats = event => {
         console.log(`prepareStats: get ${repos.data.length} repos`);
         return repos.data;
       })
-      .then(repos => _.chain(repos.slice(0, 10))
+      .then(repos => _.chain(repos/*.slice(0, 10)*/)
         .map(repoData => () => {
           const message = {
             type: 'repo',
