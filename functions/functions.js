@@ -3,7 +3,8 @@ const datastore = require('@google-cloud/datastore');
 const pubsub = require('@google-cloud/pubsub');
 const GitHub = require('github-api');
 
-const throttleDelay = 60 * 1000;
+// run the whole process as often as once per 6 hours
+const throttleDelay = 6 * 60 * 60 * 1000;
 
 const github = new GitHub({
    token: '5f82fcd9c4164494c8453e5a13a98e25e3ee5eaa',
@@ -106,9 +107,6 @@ const ds = datastore({
 });
 const key = ds.key(['State', 'default']);
 
-// const prepareMetricsTopic = 'prepare-metrics';
-const prepareStatsTopic = 'prepare-stats';
-
 const delay = (d) => new Promise(y => setTimeout(y, d));
 
 const tran = (key, F) => {
@@ -149,6 +147,8 @@ const publish = (topic, message) => ps.topic(topic).publish(message);
 
 const userKey = id => ds.key(['User', id]);
 
+const prepareStatsTopic = 'prepareStats';
+const processRepoTopic = 'processRepo';
 const updateUserTopic = 'updateUser';
 
 exports.updateUser = event => {
@@ -160,29 +160,20 @@ exports.updateUser = event => {
   const key = userKey(user.id);
 
   return Promise.resolve()
+    .then(() => delay(30 * 1000))
     .then(() => {
       console.log(`updateUser: get metrics for ${user.login}`);
-      return Promise.all([
-        getUserMetrics(data.author), 
-        delay(60 * 1000)
-      ]); 
+      return getUserMetrics(user)
     })
-    .then(([metrics]) => {
+    .then((metrics) => {
       console.log(`updateUser: trying to save ${user.login}`);
       return backoff(() => 
-        tran(key, user => Object.assign(user, {
-          [repoId]: contribution,
+        tran(key, user => _.merge(user, {
+          repos: {
+            [repoId]: contribution,
+          },
         }, metrics)));
     });
-
-  // batchPromises(_.map(stat.data, data => 
-  //       () => getUserMetrics(data.author)
-  //         .then(metrics => Object.assign({}, data.author, metrics))
-  //         .then(author => ds.save({
-  //           key: ds.key(['User', author.id]),
-  //           data: author, 
-  //         }))
-  //       ), 10)
 };
 
 exports.processRepo = event => {
@@ -192,19 +183,30 @@ exports.processRepo = event => {
   console.log(`processRepo: process ${repoData.full_name}`);
   const repo = github.getRepo(...repoData.full_name.split('/'));
 
-  return backoff(() => 
-    repo.getContributorStats()
-      .then(resp => (resp.status === 200) ? resp : Promise.reject(resp)))
+  return Promise.resolve()
+    .then(() => delay(30 * 1000))
+    .then(() => backoff(() => 
+      repo.getContributorStats()
+        .then(resp => (resp.status === 200) ? resp : Promise.reject(resp))))
     .then(stat => {
-      console.log(`processRepo: stage(1): get stats for ${repoData.full_name} (${stat})`);
+      console.log(`processRepo: stage(1): got stats for ${repoData.full_name}`, stat);
+      const data = stat.data.reduce(
+        (acc, curr) => _.merge(acc, {
+          users: {
+            [curr.author.id]: {
+              user: curr.author,
+              total: curr.total,
+              // weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
+            },
+          },
+        }), Object.assign({}, repoData));
+      
+      console.log(`processRepo: stage(1): trying to save`, data);
       let promiseRepoStat = ds.save({
         key: ds.key(['Repo', repoData.id]),
-        data: stat.data.reduce(
-          (acc, curr) => _.set(acc, `users.${curr.author.id}`, {
-            total: curr.total,
-            weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
-          }), repoData),
+        data,
       });
+
       return Promise.all([promiseRepoStat, stat]);
     })
     .then(([temp, stat]) => {
@@ -226,12 +228,16 @@ exports.processRepo = event => {
         repoId: repoData.id,
         contribution: {
           total: data.total,
-            weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
+          weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
         }
       }))
       .map(message => () => publish(updateUserTopic, message));
       console.log(`processRepo: stage(3): publish ${promiseCreators.length} messages`);
       return batchPromises(promiseCreators, 10);
+    })
+    .catch(error => {
+      console.log(`processRepo: error:`, error);
+      return Promise.reject(error);
     });
 };
 
@@ -240,66 +246,27 @@ exports.prepareStats = event => {
   
   console.log(`prepareStats`, message);
 
-  if (message.type === 'repo') {
-    const { repoData } = message;
-    console.log(`prepareStats: process ${repoData.full_name}`);
-    const repo = github.getRepo(...repoData.full_name.split('/'));
-
-    return backoff(() => 
-      repo.getContributorStats()
-        .then(resp => (resp.status === 202) ? Promise.reject(resp) : resp))
-      .then(stat => {
-        console.log('prepareStats: stat:', stat)
-        if (stat.status !== 204) {
-          console.log(`prepareStats: get stats for ${repoData.full_name}`);
-          let promiseRepoStat = ds.save({
-            key: ds.key(['RepoStat', repoData.id]),
-            data: stat.data.reduce(
-              (acc, curr) => _.set(acc, curr.author.id, {
-                total: curr.total,
-                weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
-              }), {}),
-          });
-
-          let promiseUserStat = batchPromises(
-            stat.data.map(data => () => ds.save({
-              key: ds.key(['User', data.author.id, 'UserStat', repoData.id]),
-              data: {
-                total: data.total,
-                weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
-              }
-            })), 10);
-
-          let promiseUsers = batchPromises(_.map(stat.data, data => 
-            () => getUserMetrics(data.author)
-              .then(metrics => Object.assign({}, data.author, metrics))
-              .then(author => ds.save({
-                key: ds.key(['User', author.id]),
-                data: author, 
-              }))
-            ), 10);
-
-          return Promise.all([promiseRepoStat, promiseUserStat, promiseUsers]);
-        }
-      });
-  } else if (message.type === 'start') {
+  if (message.type === 'start') {
     return Promise.resolve()
       .then(() => org.getRepos())
       .then(repos => {
         console.log(`prepareStats: get ${repos.data.length} repos`);
         return repos.data;
       })
-      .then(repos => _.chain(repos/*.slice(0, 10)*/)
+      .then(repos => _.chain(repos/*.slice(0, 1)*/)
         .map(repoData => () => {
+          const { id, name, full_name, } = repoData;
           const message = {
             type: 'repo',
-            repoData
+            repoData: {
+              id, name, full_name,
+            }
           };
-          console.log(`prepareStats: publish process message for ${repoData.full_name}`, 
+          console.log(
+            `prepareStats: publish process message for ${repoData.full_name}`, 
             message);
           
-          return ps.topic(prepareStatsTopic)
-            .publish(message);
+          return publish(processRepoTopic, message);
         })
         .thru(fetchers => batchPromises(fetchers, 5))
         .value());
@@ -307,16 +274,18 @@ exports.prepareStats = event => {
 }
 
 exports.getState = (req, res) => {
+  const timestampKey = ds.key(['Timestamp', 'default']);
+
   return ds.get(key)
     .then(([state]) => {
       state = state || { updatedAt: 0 };
       res.set('Content-Type', 'application/json');
       res.status(200).send(state);
 
-      return isLocked(2);
+      return ds.get(timestampKey);
     })
-    .then(lock => {
-      const lastModified = lock ? lock : 0;
+    .then(([stamp]) => {
+      const lastModified = stamp ? stamp.value : 0;
       console.log(`getState: time elapsed: ${(Date.now() - lastModified) / 1000}sec`);
       if ((Date.now() - lastModified) > throttleDelay) {
         return Promise.all([
@@ -324,7 +293,11 @@ exports.getState = (req, res) => {
             .then(() => console.log(`getState: publish a message to ${prepareStatsTopic}`))
             .then(() => ps.topic(prepareStatsTopic)
               .publish({ type: 'start' })),
-        ]);
+        ])
+        .then(() => ds.save({ 
+          key: timestampKey, 
+          data: { value: Date.now() }
+        }));
       }
     })
     .catch(error => {
@@ -333,33 +306,3 @@ exports.getState = (req, res) => {
       return Promise.reject(error);
     });
 };
-
-// const update = (x) => {
-//   return lock(1)
-//     .then(() => console.log('after lock ', x))
-//     .then(() => 
-//       ds.save({ key: k, data: { w: x }})
-//         .then(() => delay(3000))
-//         .then(() => unlock(1))
-//         .catch(() => unlock(1))
-//     );
-// };
-
-// let k = ds.key(['transtest', 1]);
-
-// const cluster = require('cluster');
-
-// if (cluster.isMaster) {
-//   cluster.fork();
-//   console.log('master');
-//   update('master')
-//     .then(() => console.log('ok'))
-//     .catch(err => console.log(err));
-// } else {
-//   console.log('child');
-//   update('child')
-//     .then(() => console.log('child ok'))
-//     .catch(err => console.log(err));
-// }
-
-
