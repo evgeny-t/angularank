@@ -25,7 +25,11 @@ module.exports = require('./base')
     .then(() => wait(pause))
     .then(() => backoff(() => 
       repo.getContributorStats()
-        .then(resp => (resp.status === 200) ? resp : Promise.reject(resp))))
+        .then(resp => {
+          if (resp.status === 204) 
+            return { data: [] };
+          return (resp.status === 200) ? resp : Promise.reject(resp);
+        })))
     .then(stat => {
       console.log(`repo: stage(1): got stats for ${repoData.full_name}`);
       const data = stat.data.reduce(
