@@ -30,31 +30,6 @@ const backoff = (promiseCreator, delay = 1000) =>
 
 let org = github.getOrganization('angular');
 
-const updateRepoStat = (state, repo, data) => Object.assign(
-  state, {
-    repoToStats: Object.assign(state.repoToStats || {}, {
-      [repo.id]: data.reduce(
-        (acc, curr) => _.set(acc, curr.author.id, {
-          total: curr.total,
-          weeks: _.filter(curr.weeks, w => w && (w.a || w.d || w.c)),
-        }), {}),
-    }),
-  });
-
-const updateUserStat = (state, repo, data) => 
-  data.reduce((state, data) => Object.assign({},
-    state, {
-      userToStats: Object.assign(state.userToStats || {}, {
-        [data.author.id]: Object.assign(
-          _.get(state.userToStats, data.author.id, {}), {
-            [repo.id]: {
-              total: data.total,
-              weeks: _.filter(data.weeks, w => w && (w.a || w.d || w.c)),
-            }
-          }),
-      }),
-    }), state);
-
 function listFollowers(options, cb) {
   if (typeof options === 'function') {
       cb = options;
@@ -85,14 +60,6 @@ const getUserMetrics = (() => {
       }));
   };
 })();
-
-const addUsers = (state, users = []) => Object.assign(state, {
-  users: users.reduce((acc, user) => 
-    _.set(acc, user.id, user), Object.assign({}, state.users)),
-});
-
-const setUserMetrics = (state, user, metrics, value) => 
-  _.set(state, `${metrics}.${user.id}`, value);
 
 let state = {};
 
