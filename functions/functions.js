@@ -5,6 +5,9 @@ const datastore = require('@google-cloud/datastore')({
 });
 
 exports.query = (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET');
+
   if (req.query && req.query.kind) {
     const query = datastore.createQuery(req.query.kind)
       .limit(100);
