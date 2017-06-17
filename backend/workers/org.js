@@ -17,7 +17,7 @@ module.exports = require('./base')
       console.log(`org: get ${repos.data.length} repos`);
       return repos.data;
     })
-    .then(repos => _.chain(repos.slice(0, 1))
+    .then(repos => _.chain(repos/*.slice(0, 1)*/)
       .map(repoData => () => {
         const { id, name, full_name, } = repoData;
         const message = {

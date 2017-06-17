@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const GitHub = require('github-api');
-const ghConfig = require('../../github.json');
+const ghConfig = require('../github.json');
 const github = new GitHub(Object.assign({}, ghConfig));
 
 const batchPromises = (promiseCreators, chunkSize) =>

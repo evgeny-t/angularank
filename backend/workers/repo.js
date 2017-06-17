@@ -3,7 +3,7 @@ const {
   github, backoff, wait, batchPromises, 
 } = require('./utils');
 
-const pause = 1 * 1000;
+const pause = 60 * 1000;
 
 // wait
 // get repo's contributors

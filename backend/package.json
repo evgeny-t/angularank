@@ -11,6 +11,7 @@
   "dependencies": {
     "github-api": "^3.0.0",
     "google-cloud": "^0.55.0",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "pm2": "^2.5.0"
   }
 }
