@@ -1,3 +1,9 @@
+import Promise from 'promise-polyfill';
+if (!window.Promise) {
+  window.Promise = Promise;
+}
+import 'whatwg-fetch'
+
 import _ from 'lodash';
 import React from 'react';
 import ReactDOM from 'react-dom';
