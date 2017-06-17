@@ -1,7 +1,4 @@
 import Promise from 'promise-polyfill';
-if (!window.Promise) {
-  window.Promise = Promise;
-}
 import 'whatwg-fetch'
 
 import _ from 'lodash';
@@ -30,6 +27,10 @@ import { combine, createDux } from './createDux';
 import all from './dux';
 // let state = {};
 import state from './state.json';
+
+if (!window.Promise) {
+  window.Promise = Promise;
+}
 
 // Needed for onTouchTap
 // http://stackoverflow.com/a/34015469/988941
@@ -84,6 +85,34 @@ let github = new GitHub({
   token: '5562e457193223961f1296e7effd0a7ba0c6a384',
 })
 let org = github.getOrganization('angular');
+
+const gcfEndpoint = 'https://us-central1-my-bio-163107.cloudfunctions.net';
+const getUsers = (cursor = '') => 
+  fetch(`${gcfEndpoint}/query?kind=User&cursor=${cursor}`)
+    .then(resp => resp.json())
+    .then(([data, meta]) => {
+      if (meta.moreResults === 'MORE_RESULTS_AFTER_LIMIT') {
+        return getUsers(meta.endCursor)
+          .then(nextData => data.concat(nextData))
+      } else {
+        return data;
+      }
+    });
+
+// TODO(ET): dispatch request begin
+// TODO(ET): process the list
+// TODO(ET): dispatch request end
+const listUsers = (dispatch, getState) => {
+  return getUsers()
+    .then(([users, meta]) => {
+
+      if (meta.moreResults === 'MORE_RESULTS_AFTER_LIMIT') {
+        return getUsers(meta.endCursor);
+      }
+    });
+};
+
+listUsers()
 
 const fetchRepos = () => 
   (dispatch, getState) => 
