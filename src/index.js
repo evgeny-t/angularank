@@ -25,8 +25,8 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 import { combine, createDux } from './createDux';
 
 import all from './dux';
-// let state = {};
 import state from './state.json';
+import state2 from './state2.json';
 
 if (!window.Promise) {
   window.Promise = Promise;
@@ -48,9 +48,24 @@ const {
 
 const loggerMiddleware = createLogger();
 
+// console.log(state);
+// let x = _.chain(state.users)
+//   .map((user, id) => ({
+//     login: user.login,
+//     total: _.chain(state.userToStats[id])
+//       .map('total')
+//       .sum()
+//       .value()
+//   }))
+//   .sortBy(x => -x.total)
+//   .slice(0, 10)
+//   .value();
+// console.log(x);
+
+
 const store = createStore(
   all.reducer, 
-  {}/*state*/,
+  state2,
   /*composeWithDevTools*/(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
 
@@ -81,11 +96,11 @@ const backoff = (promiseCreator, delay = 1000) =>
     .catch(() => wait(delay)
       .then(() => backoff(promiseCreator, delay * 2)));
 
-let github = new GitHub({
-  username: 'evgeny-t',
-  token: '5562e457193223961f1296e7effd0a7ba0c6a384',
-})
-let org = github.getOrganization('angular');
+// let github = new GitHub({
+//   username: 'evgeny-t',
+//   token: '5562e457193223961f1296e7effd0a7ba0c6a384',
+// })
+// let org = github.getOrganization('angular');
 
 const gcfEndpoint = 'https://us-central1-my-bio-163107.cloudfunctions.net';
 const getUsers = (cursor = '') => 
@@ -117,35 +132,35 @@ const listUsers = (dispatch, getState) =>
       throw error;
     });
 
-store.dispatch(listUsers);
+// store.dispatch(listUsers);
 
-const fetchRepos = () => 
-  (dispatch, getState) => 
-    Promise.resolve()
-      .then(() => org.getRepos())
-      .then(repos => dispatch(setRepos(repos.data)));
+// const fetchRepos = () => 
+//   (dispatch, getState) => 
+//     Promise.resolve()
+//       .then(() => org.getRepos())
+//       .then(repos => dispatch(setRepos(repos.data)));
 
-const fetchContributorsStats = (repos) => 
-  (dispatch, getState) => 
-    Promise.resolve()
-      .then(() => _.chain(repos/*.slice(0, 5)*/)
-        .map(repoData => () => {
-          const repo = github.getRepo(...repoData.full_name.split('/'));
-          return backoff(() => 
-            repo.getContributorStats()
-              .then(resp => (resp.status === 202) ? Promise.reject() : resp))
-            .then(stat => {
-              console.log('stat', stat)
-              if (stat.status !== 204) {
-                console.log('stat', repoData.full_name, repoData.id, stat);
-                dispatch(updateRepoStat(repoData, stat.data));
-                dispatch(updateUserStat(repoData, stat.data));
-                dispatch(addUsers(_.map(stat.data, 'author')));
-              }
-            });
-        })
-        .thru(fetchers => batchPromises(fetchers, 5))
-        .value());
+// const fetchContributorsStats = (repos) => 
+//   (dispatch, getState) => 
+//     Promise.resolve()
+//       .then(() => _.chain(repos/*.slice(0, 5)*/)
+//         .map(repoData => () => {
+//           const repo = github.getRepo(...repoData.full_name.split('/'));
+//           return backoff(() => 
+//             repo.getContributorStats()
+//               .then(resp => (resp.status === 202) ? Promise.reject() : resp))
+//             .then(stat => {
+//               console.log('stat', stat)
+//               if (stat.status !== 204) {
+//                 console.log('stat', repoData.full_name, repoData.id, stat);
+//                 dispatch(updateRepoStat(repoData, stat.data));
+//                 dispatch(updateUserStat(repoData, stat.data));
+//                 dispatch(addUsers(_.map(stat.data, 'author')));
+//               }
+//             });
+//         })
+//         .thru(fetchers => batchPromises(fetchers, 5))
+//         .value());
 
 // store.dispatch(fetchRepos())
 //   .then(() => {
@@ -155,14 +170,14 @@ const fetchContributorsStats = (repos) =>
 //       _.map(store.getState().repos)));
 //   });
 
-function listFollowers(options, cb) {
-  if (typeof options === 'function') {
-      cb = options;
-      options = {};
-  }
-  options = this._getOptionsWithDefaults(options);
-  return this._requestAllPages(this.__getScopedUrl('followers'), options, cb);
-}
+// function listFollowers(options, cb) {
+//   if (typeof options === 'function') {
+//       cb = options;
+//       options = {};
+//   }
+//   options = this._getOptionsWithDefaults(options);
+//   return this._requestAllPages(this.__getScopedUrl('followers'), options, cb);
+// }
 
 // setTimeout(() => {
 //   _.chain(store.getState().users)
