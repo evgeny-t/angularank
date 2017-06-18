@@ -40,11 +40,11 @@ const styles = {
     metricsContainer: {
       position: 'absolute',
       textAlign: 'left',
-      left: `${75 + 4 + 4}px`,
       margin: 4,
+      right: 0,
+      width: `calc(100% - ${75 + 8 + 8}px)`,
     },
     metrics: {
-      // border: '1px solid #2ee',
       display: 'block',
       marginTop: 2,
     },
@@ -52,12 +52,10 @@ const styles = {
       width: 15,
       height: 15,
       verticalAlign: 'middle',
-      // border: '1px solid #ee2',
       display: 'inline',
     },
     value: {
       verticalAlign: 'middle',
-      // border: '1px solid #e2e',
       fontSize: '0.7rem',
       margin: 2,
     }
@@ -70,13 +68,11 @@ const User = ({ user, style }) => (
     style={{
       ...style,
       display: 'inline-block',
-      // border: '1px solid #ee1',
     }}
   >
     <div style={{
       position: 'relative',
-      height: 'calc(50% + 8px)',
-      border: '1px solid red',
+      height: `${75 + 8}px`,
     }}>
       <Avatar 
         src={user.avatar_url} 
@@ -121,7 +117,13 @@ const User = ({ user, style }) => (
 
     </div>
     
-    <Link to={`/users/${user.id}`}>
+    <Link 
+      to={`/users/${user.id}`}
+      style={{
+        display: 'block',
+        textAlign: 'center',
+      }}
+    >
       {user.login}
     </Link>
   </Paper>
@@ -212,7 +214,7 @@ const UsersPageContent = props =>
 UsersPageContent.defaultProps = {
   columns: 5,
   columnWidth: 150,
-  rowHeight: 150,
+  rowHeight: 110,
   padding: 10,
 };
 
@@ -237,7 +239,6 @@ export const UsersPage = connect(
       }))
       .sortBy(user => -user.stat.total)
       .value()
-      // .slice(0, 30),
   }),
   dispatch => ({}),
 )(props => {
