@@ -10,7 +10,7 @@ exports.query = (req, res) => {
 
   if (req.query && req.query.kind) {
     const query = datastore.createQuery(req.query.kind)
-      .limit(100);
+      .limit(250);
     if (req.query && req.query.cursor) {
       query.start(req.query.cursor);
     }

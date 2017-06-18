@@ -34,11 +34,13 @@ const { reducer: statReducer, ...statActions } = createDux({
 
 const { reducer: usersReducer, ...userActions } = createDux({
   setUsers: (state, users) => ({ ...state, users }),
-  addUsers: (state, users = []) => ({ 
-    ...state, 
-    users: users.reduce((acc, user) => 
-      _.set(acc, user.id, user), { ...state.users }),
-  }),
+  addUsers: (state, users = []) => {
+    return ({ 
+      ...state, 
+      users: users.reduce((acc, user) => 
+        _.set(acc, user.id, user), { ...state.users }),
+    });
+  },
   setUserMetrics: (state, user, metrics, value) => ({
     ...state,
     [metrics]: {
@@ -55,12 +57,18 @@ const { reducer: reposReducer, ...reposActions } = createDux({
   }),
 });
 
+const { reducer: setReducer, ...setActions } = createDux({
+  set: (state, path, value) => _.set(_.clone(state), path, value),
+});
+
 export default {
   ...statActions,
   ...userActions,
   ...reposActions,
+  ...setActions,
   reducer: combine(
     statReducer, 
     usersReducer, 
-    reposReducer),
+    reposReducer,
+    setReducer),
 };

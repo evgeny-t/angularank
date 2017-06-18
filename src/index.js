@@ -43,13 +43,14 @@ const {
   addUsers,
   setRepos,
   setUserMetrics,
+  set,
 } = all;
 
 const loggerMiddleware = createLogger();
 
 const store = createStore(
   all.reducer, 
-  state,
+  {}/*state*/,
   /*composeWithDevTools*/(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
 
@@ -102,17 +103,21 @@ const getUsers = (cursor = '') =>
 // TODO(ET): dispatch request begin
 // TODO(ET): process the list
 // TODO(ET): dispatch request end
-const listUsers = (dispatch, getState) => {
-  return getUsers()
-    .then(([users, meta]) => {
-
-      if (meta.moreResults === 'MORE_RESULTS_AFTER_LIMIT') {
-        return getUsers(meta.endCursor);
-      }
+const listUsers = (dispatch, getState) =>
+  Promise.resolve()
+    .then(() => dispatch(set('usersLoading', true)))
+    .then(() => getUsers())
+    .then(users => {
+      console.log('users', users);
+      return dispatch(addUsers(users))
+    })
+    .then(() => dispatch(set('usersLoading', false)))
+    .catch(error => {
+      dispatch(set('usersLoading', false));
+      throw error;
     });
-};
 
-listUsers()
+store.dispatch(listUsers);
 
 const fetchRepos = () => 
   (dispatch, getState) => 

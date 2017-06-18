@@ -96,7 +96,7 @@ const UserDetails = ({ user, repos }) => (
       width: 'calc(100% - 245px)',
     }}>
       {_.map(repos, repo => 
-        <Repo key={repo.repo.id} {...repo.repo} />) /*repo repo repo*/}
+        <Repo key={repo.id} {...repo} />)}
     </div>
     {/* TODO(ET): big nice calendar with contribution stats */}
   </Paper>
@@ -104,15 +104,14 @@ const UserDetails = ({ user, repos }) => (
 
 export const UserDetailsPage = connect(
   state => state,
-)(({ match, users, userToStats, repos }) => (
+)(({ match, users, }) => (
   <div style={{
     width: '100%',
     padding: 20,
   }}>
     <UserDetails 
       user={users[match.params.userid]} 
-      repos={_.map(userToStats[match.params.userid], 
-        (value, key) => ({ key, value, repo: repos[key], }))}
+      repos={users[match.params.userid].repos}
     />
   </div>
 ));

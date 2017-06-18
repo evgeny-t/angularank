@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
+import CircularProgress from 'material-ui/CircularProgress';
 import SvgIcon from 'material-ui/SvgIcon';
 import Avatar from 'material-ui/Avatar';
 import Paper from 'material-ui/Paper';
@@ -218,17 +219,18 @@ UsersPageContent.defaultProps = {
 
 export const UsersPage = connect(
   state => ({ 
+    loading: state.usersLoading,
     users: _.chain(state.users)
       .map(user => ({
         ...user,
-        stat: _.chain(state.userToStats[user.id])
+        stat: _.chain(user.repos)
           .reduce((acc, repoStats, repoId) => ({ 
             ...acc,
             total: acc.total + repoStats.total 
           }), { 
             total: 0,
-            repos: state.userToRepos[user.id],
-            followers: state.userToFollowers[user.id],
+            repos: user.userToRepos,
+            followers: user.userToFollowers,
           })
           .value(),
         
@@ -246,11 +248,32 @@ export const UsersPage = connect(
           <RankFilter />
         </ToolbarGroup>
       </Toolbar>
-      <UsersPageContent 
-        style={{
-          margin: '4px auto',
-        }}
-        {...props}
-      />
+      {
+        props.loading ? 
+          (
+            <div style={{ 
+              position: 'fixed',
+              width: '100%', 
+              height: 'calc(100% - 56px - 64px)', 
+            }}>
+              <CircularProgress 
+                size={80} thickness={7} 
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            </div>
+          ) : (
+            <UsersPageContent 
+              style={{
+                margin: '4px auto',
+              }}
+              {...props}
+            />
+          )
+      }
     </div>);
 });
