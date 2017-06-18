@@ -19,12 +19,8 @@ module.exports = require('./base')
     })
     .then(repos => _.chain(repos/*.slice(0, 1)*/)
       .map(repoData => () => {
-        const { id, name, full_name, } = repoData;
         const message = {
-          type: 'repo',
-          repoData: {
-            id, name, full_name,
-          }
+          repoData
         };
         console.log(
           `org: publish process message for ${repoData.full_name}`, 
