@@ -29,8 +29,11 @@ const transactionCreator = ds =>
       .then(([entity]) => {
         entity = entity || {};
         F(entity)
-        console.log('entity', entity)
-        t.save(entity);
+        console.log('transaction: entity:', entity)
+        t.save({
+          key,
+          data: entity,
+        });
         return t.commit()
       })
       .catch(error => {

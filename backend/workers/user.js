@@ -4,7 +4,7 @@ const {
   transactionCreator,
 } = require('./utils');
 
-const pause = 10 * 1000;
+const pause = 5 * 1000;
 
 function listFollowers(options, cb) {
   if (typeof options === 'function') {
