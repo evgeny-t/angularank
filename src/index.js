@@ -82,33 +82,40 @@ ReactDOM.render(
 
 
 const gcfEndpoint = 'https://us-central1-my-bio-163107.cloudfunctions.net';
-const getUsers = (cursor = '') => 
-  fetch(`${gcfEndpoint}/query?kind=User&cursor=${cursor}`)
+
+const gcfGet = (kind, cursor = '') => 
+  fetch(`${gcfEndpoint}/query?kind=${kind}&cursor=${cursor}`)
     .then(resp => resp.json())
     .then(([data, meta]) => {
       if (meta.moreResults === 'MORE_RESULTS_AFTER_LIMIT') {
-        return getUsers(meta.endCursor)
+        return gcfGet(kind, meta.endCursor)
           .then(nextData => data.concat(nextData))
       } else {
         return data;
       }
     });
 
-// TODO(ET): dispatch request begin
-// TODO(ET): process the list
-// TODO(ET): dispatch request end
 const listUsers = (dispatch, getState) =>
   Promise.resolve()
     .then(() => dispatch(set('usersLoading', true)))
-    .then(() => getUsers())
-    .then(users => {
-      console.log('users', users);
-      return dispatch(addUsers(users))
-    })
+    .then(() => gcfGet('User'))
+    .then(users => dispatch(addUsers(users)))
     .then(() => dispatch(set('usersLoading', false)))
     .catch(error => {
       dispatch(set('usersLoading', false));
       throw error;
     });
 
+const listRepos = (dispatch, getState) =>
+  Promise.resolve()
+    .then(() => dispatch(set('reposLoading', true)))
+    .then(() => gcfGet('Repo'))
+    .then(repos => dispatch(setRepos(repos)))
+    .then(() => dispatch(set('reposLoading', false)))
+    .catch(error => {
+      dispatch(set('reposLoading', false));
+      throw error;
+    });
+
 // store.dispatch(listUsers);
+store.dispatch(listRepos);
