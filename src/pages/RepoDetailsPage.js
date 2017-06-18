@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 const RepoDetails = ({ repo, users }) => (

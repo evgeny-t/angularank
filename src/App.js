@@ -6,7 +6,7 @@ import AppBar from 'material-ui/AppBar';
 
 import './App.css';
 
-import { UsersPage, UserDetailsContainer } from './pages/UsersPage';
+import { UsersPage } from './pages/UsersPage';
 import { UserDetailsPage } from './pages/UserDetailsPage'
 import { RepoDetailsPage } from './pages/RepoDetailsPage';
 
