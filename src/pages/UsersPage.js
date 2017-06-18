@@ -23,16 +23,18 @@ import 'react-virtualized/styles.css';
 
 import { User, userToProps, } from '../User';
 
+import all from '../dux';
+const { set } = all;
 
 class RankFilter extends Component {
   state = {
     open: false,
-    filters: [
-      'By Contribution',
-      'By Followers',
-      'By Public repos & gists',
-    ],
-    current: 0,
+    // filters: [
+    //   'By Contribution',
+    //   'By Followers',
+    //   'By Public repos & gists',
+    // ],
+    // current: 0,
   }
 
   handleClick = event => {
@@ -51,7 +53,7 @@ class RankFilter extends Component {
     return <div>
       <RaisedButton 
         onTouchTap={this.handleClick}
-        label={this.state.filters[this.state.current]}
+        label={this.props.filters[this.props.current]}
       />
       <Popover
         open={this.state.open}
@@ -62,15 +64,17 @@ class RankFilter extends Component {
       >
         <Menu>
           {
-            this.state.filters.map((filter, index) => 
+            this.props.filters.map((filter, index) => 
               <MenuItem 
                 key={filter}
                 primaryText={filter} 
-                onTouchTap={() => 
+                onTouchTap={() => {
                   this.setState({ 
-                    current: index,
+                    // current: index,
                     open: false,
-                  })}
+                  });
+                  this.props.onFilterSelected(index);
+                }}
               />)
           }
         </Menu>
@@ -113,22 +117,33 @@ UsersPageContent.defaultProps = {
   padding: 10,
 };
 
+const sorter = [
+  user => -user.stat.total,
+  user => -user.stat.followers,
+  user => -user.stat.repos,
+];
 
 export const UsersPage = connect(
   state => ({ 
+    rankFilter: state.rankFilter,
     loading: state.usersLoading,
     users: _.chain(state.users)
       .map(userToProps)
-      .sortBy(user => -user.stat.total)
+      .sortBy(sorter[state.rankFilter.current])
       .value()
   }),
-  dispatch => ({}),
+  dispatch => ({
+    onFilterSelected: index => dispatch(set('rankFilter.current', index)),
+  }),
 )(props => {
   return (
     <div>
       <Toolbar>
         <ToolbarGroup>
-          <RankFilter />
+          <RankFilter 
+            {...props.rankFilter} 
+            onFilterSelected={props.onFilterSelected}
+          />
         </ToolbarGroup>
       </Toolbar>
       {

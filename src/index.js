@@ -62,8 +62,17 @@ const loggerMiddleware = createLogger();
 
 
 const store = createStore(
-  all.reducer, 
-  state2,
+  all.reducer, {
+    ...state2,
+    rankFilter: {
+      filters: [
+        'By Contribution',
+        'By Followers',
+        'By Public repos & gists',
+      ],
+      current: 0,
+    }
+  },
   /*composeWithDevTools*/(applyMiddleware(thunkMiddleware, loggerMiddleware))
 );
 
@@ -117,5 +126,5 @@ const listRepos = (dispatch, getState) =>
       throw error;
     });
 
-// store.dispatch(listUsers);
+store.dispatch(listUsers);
 store.dispatch(listRepos);
