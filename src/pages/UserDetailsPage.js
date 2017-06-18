@@ -59,10 +59,10 @@ const Repo = ({ id, name, language,
       <span className={`Repo__Language Repo__Language--${language}`}>
         {language}
       </span>
-      <StarIcon style={iconStyle} />
-      <span>{abbreviate(stargazers_count)}</span>
-      <ForkIcon style={iconStyle} />
-      <span>{abbreviate(forks_count)}</span>
+      {stargazers_count && <StarIcon style={iconStyle} />}
+      {stargazers_count && <span>{abbreviate(stargazers_count)}</span>}
+      {forks_count && <ForkIcon style={iconStyle} />}
+      {forks_count && <span>{abbreviate(forks_count)}</span>}
     </div>
   </Paper>
 );
@@ -104,14 +104,15 @@ const UserDetails = ({ user, repos }) => (
 
 export const UserDetailsPage = connect(
   state => state,
-)(({ match, users, }) => (
+)(({ match, users, repos, }) => (
   <div style={{
     width: '100%',
     padding: 20,
   }}>
     <UserDetails 
       user={users[match.params.userid]} 
-      repos={users[match.params.userid].repos}
+      repos={_.map(users[match.params.userid].repos, 
+        (repo, id) => repos[id])}
     />
   </div>
 ));
