@@ -16,15 +16,12 @@ import { Provider } from 'react-redux';
 import { createLogger } from 'redux-logger';
 import thunkMiddleware from 'redux-thunk';
 import { createStore, applyMiddleware } from 'redux';
-// import { composeWithDevTools } from 'redux-devtools-extension';
 
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
-// import { combine, createDux } from './createDux';
-
 import all from './dux';
-import state from './state.json';
-import state2 from './state2.json';
+// import state from './state.json';
+// import state2 from './state2.json';
 
 if (!window.Promise) {
   window.Promise = Promise;
@@ -35,35 +32,18 @@ if (!window.Promise) {
 injectTapEventPlugin();
 
 const {
-  // updateRepoStat,
-  // updateUserStat,
-  // setUsers,
   addUsers,
   setRepos,
-  // setUserMetrics,
   set,
 } = all;
 
 const loggerMiddleware = createLogger();
 
-// console.log(state);
-// let x = _.chain(state.users)
-//   .map((user, id) => ({
-//     login: user.login,
-//     total: _.chain(state.userToStats[id])
-//       .map('total')
-//       .sum()
-//       .value()
-//   }))
-//   .sortBy(x => -x.total)
-//   .slice(0, 10)
-//   .value();
-// console.log(x);
-
-
 const store = createStore(
   all.reducer, {
-    ...state2,
+    // ...state2,
+    usersLoading: true,
+    reposLoading: true,
     rankFilter: {
       filters: [
         'By Contribution',
@@ -73,22 +53,10 @@ const store = createStore(
       current: 0,
     }
   },
-  /*composeWithDevTools*/(applyMiddleware(thunkMiddleware, loggerMiddleware))
+  applyMiddleware(thunkMiddleware, loggerMiddleware)
 );
 
 window.store = store;
-
-ReactDOM.render(
-  <Provider store={store}>
-    <MuiThemeProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </MuiThemeProvider>
-  </Provider>, 
-  document.getElementById('root'));
-// registerServiceWorker();
-
 
 const gcfEndpoint = 'https://us-central1-my-bio-163107.cloudfunctions.net';
 
@@ -128,3 +96,14 @@ const listRepos = (dispatch, getState) =>
 
 store.dispatch(listUsers);
 store.dispatch(listRepos);
+
+ReactDOM.render(
+  <Provider store={store}>
+    <MuiThemeProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </MuiThemeProvider>
+  </Provider>, 
+  document.getElementById('root'));
+// registerServiceWorker();

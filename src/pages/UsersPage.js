@@ -29,12 +29,6 @@ const { set } = all;
 class RankFilter extends Component {
   state = {
     open: false,
-    // filters: [
-    //   'By Contribution',
-    //   'By Followers',
-    //   'By Public repos & gists',
-    // ],
-    // current: 0,
   }
 
   handleClick = event => {
@@ -70,7 +64,6 @@ class RankFilter extends Component {
                 primaryText={filter} 
                 onTouchTap={() => {
                   this.setState({ 
-                    // current: index,
                     open: false,
                   });
                   this.props.onFilterSelected(index);

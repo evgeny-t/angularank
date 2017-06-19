@@ -22,7 +22,6 @@ export const userToProps = user => ({
     .value(),
 });
 
-// stolen from GitHub
 export const RepoIcon = props => (
   <SvgIcon role="img" viewBox="0 0 12 16"
     {...props}
@@ -120,6 +119,8 @@ export const User = ({ user, style }) => (
       style={{
         display: 'block',
         textAlign: 'center',
+        overflow: 'hidden',
+        maxHeight: 24,
       }}
     >
       {user.login}

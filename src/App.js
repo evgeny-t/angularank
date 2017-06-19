@@ -19,7 +19,6 @@ export default class App extends Component {
             color: 'white',
           }} to='/'>Angularank</Link>}
         />
-{/*TODO(ET): layout componenet*/}
         <Route exact path='/' component={UsersPage} />
         <Route path={`/users/:userid`} component={UserDetailsPage} />
         <Route path={`/repos/:repoid`} component={RepoDetailsPage} />

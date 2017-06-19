@@ -85,16 +85,22 @@ const RepoDetails = ({ repo, users }) => (
 export const RepoDetailsPage = connect(
   state => state
 )(
-  ({ match, repos, users, repoToStats, reposLoading }) => (
-    <div>
-      { reposLoading ? <Loading /> : (
+  ({ match, repos, users, repoToStats, reposLoading }) => {
+    if (reposLoading) {
+      return <div>
+        <Loading />
+      </div>;
+    } else {
+      console.log('reposLoading', reposLoading, repos[match.params.repoid]);
+      return <div>
         <RepoDetails 
           repo={repos[match.params.repoid]} 
-          users={_.chain(repoToStats[match.params.repoid])
+          users={_.chain(repos[match.params.repoid].users)
               .map((value, userid) => userToProps(users[userid]))
               .sortBy(user => -user.stat.total)
               .value()}
-        />)}
-    </div>
-  )
+        />
+      </div>;
+    }
+  }
 );

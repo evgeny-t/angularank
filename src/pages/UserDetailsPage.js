@@ -60,10 +60,10 @@ const Repo = ({ id, name, language,
       <span className={`Repo__Language Repo__Language--${language}`}>
         {language}
       </span>
-      {stargazers_count && <StarIcon style={iconStyle} />}
-      {stargazers_count && <span>{abbreviate(stargazers_count)}</span>}
-      {forks_count && <ForkIcon style={iconStyle} />}
-      {forks_count && <span>{abbreviate(forks_count)}</span>}
+      <StarIcon style={iconStyle} />
+      <span>{abbreviate(stargazers_count)}</span>
+      <ForkIcon style={iconStyle} />
+      <span>{abbreviate(forks_count)}</span>
     </div>
   </Paper>
 );
@@ -105,18 +105,26 @@ const UserDetails = ({ user, repos }) => (
 
 export const UserDetailsPage = connect(
   state => state,
-)(({ match, users, repos, usersLoading, }) => (
-  <div style={{
+)(({ match, users, repos, usersLoading, reposLoading }) => {
+  console.log(usersLoading);
+  let rootStyle = {
     width: '100%',
     padding: 20,
-  }}>
-    { usersLoading ? <Loading /> : (
+  };
+  if (usersLoading || reposLoading) {
+    return (
+      <div style={rootStyle}>
+        <Loading />
+      </div>
+    );
+  } else {
+    return <div style={rootStyle}>
       <UserDetails 
         user={users[match.params.userid]} 
         repos={_.map(users[match.params.userid].repos, 
           (repo, id) => repos[id])}
-      />)
-    }
-  </div>
-));
+      />
+    </div>;
+  }
+});
 
