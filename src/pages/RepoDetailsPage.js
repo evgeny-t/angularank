@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import SvgIcon from 'material-ui/SvgIcon';
 import Paper from 'material-ui/Paper';
 
+import { Loading } from '../Loading';
 import { User, userToProps } from '../User';
 import './RepoDetailsPage.css';
 
@@ -84,15 +85,16 @@ const RepoDetails = ({ repo, users }) => (
 export const RepoDetailsPage = connect(
   state => state
 )(
-  ({ match, repos, users, repoToStats }) => (
+  ({ match, repos, users, repoToStats, reposLoading }) => (
     <div>
-      <RepoDetails 
-        repo={repos[match.params.repoid]} 
-        users={_.chain(repoToStats[match.params.repoid])
-            .map((value, userid) => userToProps(users[userid]))
-            .sortBy(user => -user.stat.total)
-            .value()}
-      />
+      { reposLoading ? <Loading /> : (
+        <RepoDetails 
+          repo={repos[match.params.repoid]} 
+          users={_.chain(repoToStats[match.params.repoid])
+              .map((value, userid) => userToProps(users[userid]))
+              .sortBy(user => -user.stat.total)
+              .value()}
+        />)}
     </div>
   )
 );

@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
-import CircularProgress from 'material-ui/CircularProgress';
 import SvgIcon from 'material-ui/SvgIcon';
 import Avatar from 'material-ui/Avatar';
 import Paper from 'material-ui/Paper';
@@ -22,6 +21,7 @@ import { Collection, WindowScroller } from 'react-virtualized';
 import 'react-virtualized/styles.css';
 
 import { User, userToProps, } from '../User';
+import { Loading } from '../Loading';
 
 import all from '../dux';
 const { set } = all;
@@ -147,31 +147,14 @@ export const UsersPage = connect(
         </ToolbarGroup>
       </Toolbar>
       {
-        props.loading ? 
-          (
-            <div style={{ 
-              position: 'fixed',
-              width: '100%', 
-              height: 'calc(100% - 56px - 64px)', 
-            }}>
-              <CircularProgress 
-                size={80} thickness={7} 
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                }}
-              />
-            </div>
-          ) : (
-            <UsersPageContent 
-              style={{
-                margin: '4px auto',
-              }}
-              {...props}
-            />
-          )
+        props.loading ? <Loading /> : (
+          <UsersPageContent 
+            style={{
+              margin: '4px auto',
+            }}
+            {...props}
+          />
+        )
       }
     </div>);
 });

@@ -8,6 +8,7 @@ import Avatar from 'material-ui/Avatar';
 import Paper from 'material-ui/Paper';
 import SvgIcon from 'material-ui/SvgIcon';
 
+import { Loading } from '../Loading';
 import './UserDetailsPage.css';
 
 const abbreviate = i => 
@@ -104,16 +105,18 @@ const UserDetails = ({ user, repos }) => (
 
 export const UserDetailsPage = connect(
   state => state,
-)(({ match, users, repos, }) => (
+)(({ match, users, repos, usersLoading, }) => (
   <div style={{
     width: '100%',
     padding: 20,
   }}>
-    <UserDetails 
-      user={users[match.params.userid]} 
-      repos={_.map(users[match.params.userid].repos, 
-        (repo, id) => repos[id])}
-    />
+    { usersLoading ? <Loading /> : (
+      <UserDetails 
+        user={users[match.params.userid]} 
+        repos={_.map(users[match.params.userid].repos, 
+          (repo, id) => repos[id])}
+      />)
+    }
   </div>
 ));
 
