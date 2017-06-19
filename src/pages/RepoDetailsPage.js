@@ -6,6 +6,7 @@ import SvgIcon from 'material-ui/SvgIcon';
 import Paper from 'material-ui/Paper';
 
 import { User, userToProps } from '../User';
+import './RepoDetailsPage.css';
 
 const StarIcon = props => (
   <SvgIcon role="img" viewBox="0 0 14 16"
@@ -39,6 +40,12 @@ const IssueIcon = props => (
   </SvgIcon>
 );
 
+const iconStyle = {
+  height: 17,
+  width: 17,
+  verticalAlign: 'text-top',
+};
+
 const RepoDetails = ({ repo, users }) => (
   <Paper
     zDepth={0}
@@ -46,16 +53,18 @@ const RepoDetails = ({ repo, users }) => (
       marginLeft: '10%',
       marginRight: '10%',
     }}
+    className='RepoDetails'
   >
     <Paper
       zDepth={1}
       style={{padding:8, margin:8,}}
+      className='RepoDetails__Info'
     >
       <h2>{repo.name}</h2>
-      <span><ForkIcon /> Forks {repo.forks_count}</span>
-      <span><IssueIcon /> Issues {repo.open_issues_count}</span>
-      <span><StarIcon /> Stargazers {repo.stargazers_count}</span>
-      <span><EyeIcon /> Watchers {repo.watchers_count}</span>
+      <span><ForkIcon style={iconStyle} /> Forks {repo.forks_count}</span>
+      <span><IssueIcon style={iconStyle} /> Issues {repo.open_issues_count}</span>
+      <span><StarIcon style={iconStyle} /> Stargazers {repo.stargazers_count}</span>
+      <span><EyeIcon style={iconStyle} /> Watchers {repo.watchers_count}</span>
     </Paper>
     
     
